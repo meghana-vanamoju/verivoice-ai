@@ -67,12 +67,12 @@ def test_empty_file():
 
 
 def test_non_wav_bytes():
-    """Non-WAV bytes (e.g., plain text) should be rejected as malformed_audio."""
+    """Non-WAV bytes (e.g., plain text) are rejected as unsupported_format (415)."""
     result, error = analyze_audio_file(b"Not a WAV file", "fake.wav")
     assert result is None
     assert error is not None
-    assert error["error"]["code"] == "malformed_audio"
-    assert error["status"] == 400
+    assert error["error"]["code"] == "unsupported_format"
+    assert error["status"] == 415
 
 
 def test_truncated_wav():
@@ -87,6 +87,16 @@ def test_truncated_wav():
     assert error is not None
     assert error["error"]["code"] == "malformed_audio"
     assert error["status"] == 400
+
+
+def test_riff_container_without_wave_form_returns_415():
+    """A RIFF container that is not WAVE (e.g. AVI) is an unsupported format."""
+    payload = b"RIFF\x24\x00\x00\x00AVI LIST" + b"\x00" * 16
+    result, error = analyze_audio_file(payload, "clip.avi")
+    assert result is None
+    assert error is not None
+    assert error["error"]["code"] == "unsupported_format"
+    assert error["status"] == 415
 
 
 def test_wav_with_wrong_extension_but_valid_contents():
@@ -218,8 +228,13 @@ def test_error_code_mappings():
     assert err["error"]["code"] == "missing_field"
     assert err["status"] == 422
 
-    # malformed_audio -> 400
+    # unsupported_format -> 415 (container is not RIFF/WAVE)
     _, err = analyze_audio_file(b"not wav", "fake.wav")
+    assert err["error"]["code"] == "unsupported_format"
+    assert err["status"] == 415
+
+    # malformed_audio -> 400 (claims to be WAVE but cannot be read)
+    _, err = analyze_audio_file(_make_wav_bytes(duration_sec=0.1)[:10], "trunc.wav")
     assert err["error"]["code"] == "malformed_audio"
     assert err["status"] == 400
 

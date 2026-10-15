@@ -9,17 +9,41 @@ Does NOT claim that technical validation proves speaker authenticity.
 """
 
 import io
+import os
 import wave
-import sys
 from typing import Any
 
 from pydantic import BaseModel
 
 from ..schemas.schemas import AudioBaseModel, DetectorStatusModel, DetectorStatus
 
-# Configuration from .env.example
-MAX_AUDIO_SIZE_BYTES: int = 15 * 1024 * 1024  # 15 MB
-MAX_AUDIO_DURATION_SECONDS: int = 120  # 120 seconds
+DEFAULT_MAX_AUDIO_SIZE_MB = 15
+DEFAULT_MAX_AUDIO_DURATION_SECONDS = 120
+
+# RIFF/WAVE container magic, used to tell "not a WAV file" (415) apart from
+# "claims to be WAVE but cannot be read" (400).
+_RIFF_MAGIC = b"RIFF"
+_WAVE_MAGIC = b"WAVE"
+
+
+def _int_from_env(name: str, default: int) -> int:
+    """Read a positive integer setting from the environment, falling back safely."""
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        value = int(raw.strip())
+    except ValueError:
+        return default
+    return value if value > 0 else default
+
+
+# Configuration from .env.example (MAX_AUDIO_SIZE_MB / MAX_AUDIO_DURATION_SECONDS).
+MAX_AUDIO_SIZE_MB: int = _int_from_env("MAX_AUDIO_SIZE_MB", DEFAULT_MAX_AUDIO_SIZE_MB)
+MAX_AUDIO_SIZE_BYTES: int = MAX_AUDIO_SIZE_MB * 1024 * 1024
+MAX_AUDIO_DURATION_SECONDS: int = _int_from_env(
+    "MAX_AUDIO_DURATION_SECONDS", DEFAULT_MAX_AUDIO_DURATION_SECONDS
+)
 
 
 class AudioValidationError(BaseModel):
@@ -85,7 +109,11 @@ def analyze_audio_file(file_bytes: bytes, filename: str | str = "") -> tuple[Aud
     if len(file_bytes) > MAX_AUDIO_SIZE_BYTES:
         return None, _error_limit_exceeded(len(file_bytes))
 
-    # --- Step 2: Format validation using wave module ---
+    # --- Step 2: Container check — actual bytes, never the filename or MIME type ---
+    if not _has_wave_container(file_bytes):
+        return None, _error_unsupported_format()
+
+    # --- Step 3: Format validation using wave module ---
     try:
         with io.BytesIO(file_bytes) as bio:
             with wave.open(bio) as wav:
@@ -122,6 +150,21 @@ def analyze_audio_file(file_bytes: bytes, filename: str | str = "") -> tuple[Aud
     except Exception as exc:  # Broad — invalid/ truncated/ malformed WAV
         # If wave.open fails, it's not a valid WAV file
         return None, _error_malformed_audio(exc)
+
+
+def _has_wave_container(file_bytes: bytes) -> bool:
+    """True when the bytes are a WAVE container candidate.
+
+    Only the actual file contents are inspected; the declared filename and MIME
+    type are never trusted. A short prefix that still begins with the RIFF magic
+    is treated as a (truncated) WAV so that :func:`wave.open` reports it as
+    unreadable rather than as an unsupported format.
+    """
+    if file_bytes[:4] != _RIFF_MAGIC:
+        return False
+    if len(file_bytes) < 12:
+        return True
+    return file_bytes[8:12] == _WAVE_MAGIC
 
 
 def _error_missing_field(field_name: str) -> dict[str, any]:
@@ -165,8 +208,12 @@ def _error_limit_exceeded(actual_size: int) -> dict[str, any]:
     return {
         "error": {
             "code": "limit_exceeded",
-            "message": f"Uploaded file exceeds maximum size of {MAX_AUDIO_SIZE_BYTES // (1024 * 1024)} MB.",
-            "details": {"actual_bytes": actual_size, "max_bytes": MAX_AUDIO_SIZE_BYTES},
+            "message": (
+                f"Uploaded file exceeds maximum size of {MAX_AUDIO_SIZE_MB} MB "
+                f"(received {actual_size} bytes)."
+            ),
+            # The contract defines details as always null in the baseline.
+            "details": None,
         },
         "status": 413,
     }
@@ -177,8 +224,11 @@ def _error_duration_exceeded(duration_sec: float) -> dict[str, any]:
     return {
         "error": {
             "code": "limit_exceeded",
-            "message": f"Audio duration exceeds maximum of {MAX_AUDIO_DURATION_SECONDS} seconds.",
-            "details": {"actual_sec": round(duration_sec, 2), "max_sec": MAX_AUDIO_DURATION_SECONDS},
+            "message": (
+                f"Audio duration exceeds maximum of {MAX_AUDIO_DURATION_SECONDS} seconds "
+                f"(measured {duration_sec:.1f} seconds)."
+            ),
+            "details": None,
         },
         "status": 413,
     }
