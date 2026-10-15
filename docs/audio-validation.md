@@ -131,7 +131,7 @@ Detector deps are optional and installed separately from the base backend:
 pip install "torch>=2.11" "transformers>=5.5"
 ```
 
-Verified working: torch 2.11.0 (CPU), transformers 5.5.0. Without them,
+Verified working: torch 2.11.0 (CPU), transformers 5.14.1. Without them,
 inference returns `failed` while WAV validation keeps working. No
 scipy/librosa/torchaudio needed (mono mix-down + linear resample are
 stdlib-only).

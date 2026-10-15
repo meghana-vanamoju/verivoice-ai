@@ -228,7 +228,6 @@ def _decode_mono_samples(
     file_bytes: bytes,
     n_channels: int,
     sampwidth: int,
-    frame_rate: int,
     n_frames: int,
 ) -> list[float] | None:
     """Decode full PCM to mono float32 in [-1, 1]; None if unsupported.
@@ -282,7 +281,6 @@ def _detector_payload_for_valid(
         file_bytes,
         meta["n_channels"],
         meta["sampwidth"],
-        meta["frame_rate"],
         meta["n_frames"],
     )
     if samples is None:
@@ -399,22 +397,6 @@ def _error_unsupported_format() -> dict[str, Any]:
             "details": None,
         },
         "status": 415,
-    }
-
-
-def _error_malformed_audio(exc: Exception) -> dict[str, Any]:
-    """Return a 400 malformed_audio error per the API contract.
-
-    The message stays generic: internal exception text is never exposed.
-    """
-    _ = exc
-    return {
-        "error": {
-            "code": "malformed_audio",
-            "message": "Audio file is malformed or cannot be read.",
-            "details": None,
-        },
-        "status": 400,
     }
 
 

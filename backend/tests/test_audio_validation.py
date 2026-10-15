@@ -34,7 +34,8 @@ def _make_wav_bytes(
         wav.setframerate(sample_rate)
         # Generate silence (zeros) - sufficient for validation
         n_frames = int(duration_sec * sample_rate)
-        wav.writeframes(b"\x00\x00" * n_frames if sampwidth == 2 else b"\x00" * n_frames)
+        frame_bytes = b"\x00" * (sampwidth * channels)
+        wav.writeframes(frame_bytes * n_frames)
     return buffer.getvalue()
 
 
@@ -182,6 +183,7 @@ def test_single_channel_vs_stereo():
         assert error is None
         assert result is not None
         assert result.channel_count == channels
+        assert 0.9 <= result.duration_sec <= 1.1
 
 
 def test_wav_duration_warning_near_limit():
