@@ -1,160 +1,231 @@
-import { FormEvent, useState } from "react";
-import { analyzeContext } from "./services/context-analysis";
-import type {
-  ContextAnalysisResult,
-  RiskLevel,
-} from "./types/context-analysis";
+import { useState } from "react";
+import "./App.css";
+import { analyzeAudio, ApiRequestError } from "./services/api";
+import { AudioUpload } from "./components/AudioUpload";
+import { ResultsDashboard } from "./components/ResultsDashboard";
+import { MAX_AUDIO_BYTES } from "./types/analysis";
+import type { AnalysisResponse } from "./types/analysis";
+import { ContextReview } from "./pages/ContextReview";
 
-const levels: Record<RiskLevel, string> = {
-  low: "Low",
-  moderate: "Moderate",
-  high: "High",
-  critical: "Critical",
-};
+type AppState = "ready" | "analyzing" | "completed" | "failed";
+type AppView = "voice" | "context";
 
-function App() {
-  const [context, setContext] = useState("");
-  const [transcript, setTranscript] = useState("");
-  const [result, setResult] = useState<ContextAnalysisResult | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading(true);
-    setError("");
-    setResult(null);
-    try {
-      setResult(
-        await analyzeContext({
-          context,
-          ...(transcript.trim() ? { transcript } : {}),
-        }),
-      );
-    } catch (caught) {
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "Analysis failed. Please try again.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
+export default function App() {
+  const [view, setView] = useState<AppView>("voice");
 
   return (
-    <main className="page-shell">
-      <header className="site-header">
-        <a className="wordmark" href="/" aria-label="VeriVoice AI home">
-          <span className="wordmark-icon" aria-hidden="true">V</span>
-          <span>VeriVoice <strong>AI</strong></span>
-        </a>
-        <span className="header-tag">COMMUNICATION SAFETY</span>
-      </header>
+    <div className="app-root">
+      <nav className="app-nav" aria-label="Primary">
+        <button
+          type="button"
+          className={view === "voice" ? "nav-tab nav-tab-active" : "nav-tab"}
+          aria-pressed={view === "voice"}
+          onClick={() => setView("voice")}
+        >
+          Voice analysis
+        </button>
+        <button
+          type="button"
+          className={view === "context" ? "nav-tab nav-tab-active" : "nav-tab"}
+          aria-pressed={view === "context"}
+          onClick={() => setView("context")}
+        >
+          Context review
+        </button>
+      </nav>
 
-      <section className="intro">
-        <p className="eyebrow">CONTEXT REVIEW</p>
-        <h1>Pause. Check the request.</h1>
-        <p className="intro-copy">
-          Review a sensitive request for common pressure and payment scam
-          signals. Findings are transparent heuristics—not proof of fraud or
-          voice identity.
-        </p>
-      </section>
-
-      <div className="workspace">
-        <form className="analysis-form" onSubmit={handleSubmit}>
-          <label htmlFor="context">Call or message context</label>
-          <p className="field-hint">
-            Who contacted you, what they claim, and any relevant circumstances.
-          </p>
-          <textarea
-            id="context"
-            required
-            rows={5}
-            value={context}
-            onChange={(event) => setContext(event.target.value)}
-            placeholder="Example: Someone claiming to be our supplier called about an invoice..."
-          />
-
-          <label htmlFor="transcript">Transcript (optional)</label>
-          <p className="field-hint">
-            Include the exact words used when available.
-          </p>
-          <textarea
-            id="transcript"
-            rows={6}
-            value={transcript}
-            onChange={(event) => setTranscript(event.target.value)}
-            placeholder="Example: Please wire the funds immediately to our new account..."
-          />
-
-          <button type="submit" disabled={loading || !context.trim()}>
-            {loading ? "Reviewing request…" : "Analyze communication"}
-          </button>
-          {error && <p className="error-message" role="alert">{error}</p>}
-        </form>
-
-        <section className="results" aria-live="polite" aria-busy={loading}>
-          {!result && !loading && (
-            <div className="empty-state">
-              <span className="empty-mark" aria-hidden="true">◎</span>
-              <h2>Your review will appear here</h2>
-              <p>Enter the context of a sensitive request to see its findings and recommended next steps.</p>
-            </div>
-          )}
-          {loading && <p className="loading-state">Checking for risk signals…</p>}
-          {result && (
-            <div className="result-content">
-              <div className={`risk-summary risk-${result.level}`}>
-                <div>
-                  <p className="eyebrow">HEURISTIC RISK LEVEL</p>
-                  <h2>{levels[result.level]}</h2>
-                </div>
-                <p className="score"><strong>{result.score}</strong><span>/ 100</span></p>
-              </div>
-
-              <section className="result-section">
-                <h3>Findings <span>{result.findings.length}</span></h3>
-                {result.findings.length === 0 ? (
-                  <p className="no-findings">No configured risk signals were detected. This does not establish that the request is safe.</p>
-                ) : (
-                  <ul className="finding-list">
-                    {result.findings.map((finding) => (
-                      <li key={finding.code} className="finding">
-                        <div className="finding-heading">
-                          <strong>{finding.title}</strong>
-                          <span>+{finding.score}</span>
-                        </div>
-                        <code>{finding.code}</code>
-                        <ul className="evidence-list">
-                          {finding.evidence.map((evidence, index) => (
-                            <li key={`${finding.code}-${index}`}>“{evidence}”</li>
-                          ))}
-                        </ul>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-
-              <section className="result-section guidance-section">
-                <h3>Recommended next steps</h3>
-                <ul>
-                  {result.guidance.map((item) => <li key={item}>{item}</li>)}
-                </ul>
-              </section>
-              <p className="disclaimer">
-                This screening is a heuristic, not a calibrated probability.
-                Independently verify requests using a known contact method.
-              </p>
-            </div>
-          )}
-        </section>
-      </div>
-      <footer>VeriVoice AI · Verify sensitive requests independently.</footer>
-    </main>
+      {view === "voice" ? <VoiceAnalysisDashboard /> : <ContextReview />}
+    </div>
   );
 }
 
-export default App;
+function VoiceAnalysisDashboard() {
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioError, setAudioError] = useState<string | null>(null);
+  const [context, setContext] = useState("");
+  const [transcript, setTranscript] = useState("");
+  const [language, setLanguage] = useState("");
+  const [contextError, setContextError] = useState<string | null>(null);
+  const [status, setStatus] = useState<AppState>("ready");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [result, setResult] = useState<AnalysisResponse | null>(null);
+
+  const handleFileSelected = (file: File | null) => {
+    setAudioError(null);
+    if (!file) {
+      setAudioFile(null);
+      return;
+    }
+    if (file.size > MAX_AUDIO_BYTES) {
+      setAudioFile(null);
+      setAudioError("File exceeds the 15 MB limit. Please choose a smaller WAV file.");
+      return;
+    }
+    setAudioFile(file);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setContextError(null);
+    setAudioError(null);
+    setErrorMessage(null);
+
+    if (!audioFile) {
+      setAudioError("Please select a WAV audio file.");
+      return;
+    }
+    if (!context.trim()) {
+      setContextError("Context is required. Describe the communication and circumstances.");
+      return;
+    }
+
+    setStatus("analyzing");
+    setResult(null);
+
+    try {
+      const response = await analyzeAudio({
+        audio: audioFile,
+        context: context.trim(),
+        transcript,
+        language,
+      });
+      setResult(response);
+      setStatus("completed");
+    } catch (error) {
+      let message = "An unexpected error occurred. Please retry.";
+      if (error instanceof ApiRequestError) {
+        message = error.message;
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      setErrorMessage(message);
+      setStatus("failed");
+    }
+  };
+
+  const handleNewAnalysis = () => {
+    setResult(null);
+    setErrorMessage(null);
+    setStatus("ready");
+  };
+
+  const handleReset = () => {
+    setAudioFile(null);
+    setAudioError(null);
+    setContext("");
+    setTranscript("");
+    setLanguage("");
+    setContextError(null);
+    setErrorMessage(null);
+    setResult(null);
+    setStatus("ready");
+  };
+
+  const isAnalyzing = status === "analyzing";
+
+  return (
+    <div className="app-shell">
+      <header className="app-header">
+        <h1>VeriVoice AI</h1>
+        <p>
+          Intelligent Voice Impersonation Defense System. Assess technical audio
+          properties and contextual warning signs, not voice authenticity.
+        </p>
+        <p className="callout">
+          Contextual risk alone does not establish voice authenticity. A low score is
+          not proof of safety.
+        </p>
+      </header>
+
+      <main>
+        {status !== "completed" ? (
+          <form className="analysis-form" onSubmit={handleSubmit} noValidate>
+            <AudioUpload
+              file={audioFile}
+              error={audioError}
+              onFileSelected={handleFileSelected}
+              onClear={() => setAudioFile(null)}
+              disabled={isAnalyzing}
+            />
+
+            <div className="field">
+              <label className="field-label" htmlFor="context">
+                Communication context <span className="required">*</span>
+              </label>
+              <p className="field-hint" id="context-help">
+                Required: describe the communication and circumstances. This helps
+                identify contextual warning signs such as urgency or secrecy.
+              </p>
+              <textarea
+                id="context"
+                value={context}
+                onChange={(event) => setContext(event.target.value)}
+                disabled={isAnalyzing}
+                rows={4}
+                aria-describedby="context-help"
+              />
+              {contextError ? (
+                <p className="field-error" role="alert">
+                  {contextError}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="field">
+              <label className="field-label" htmlFor="transcript">Transcript (optional)</label>
+              <textarea
+                id="transcript"
+                value={transcript}
+                onChange={(event) => setTranscript(event.target.value)}
+                disabled={isAnalyzing}
+                rows={3}
+              />
+            </div>
+
+            <div className="field">
+              <label className="field-label" htmlFor="language">Language (optional)</label>
+              <input
+                id="language"
+                type="text"
+                value={language}
+                onChange={(event) => setLanguage(event.target.value)}
+                disabled={isAnalyzing}
+                placeholder="e.g. en"
+              />
+            </div>
+
+            <div className="form-actions">
+              <button type="submit" className="primary-button" disabled={isAnalyzing}>
+                {isAnalyzing ? "Analyzing..." : "Analyze"}
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={handleReset}
+                disabled={isAnalyzing}
+              >
+                Reset
+              </button>
+            </div>
+
+            {isAnalyzing ? (
+              <p className="status-live" role="status" aria-live="polite">
+                Uploading and analyzing audio. This may take a moment...
+              </p>
+            ) : null}
+
+            {status === "failed" && errorMessage ? (
+              <p className="error-banner" role="alert">
+                {errorMessage}
+              </p>
+            ) : null}
+          </form>
+        ) : null}
+
+        {status === "completed" && result ? (
+          <ResultsDashboard result={result} onNewAnalysis={handleNewAnalysis} />
+        ) : null}
+      </main>
+    </div>
+  );
+}

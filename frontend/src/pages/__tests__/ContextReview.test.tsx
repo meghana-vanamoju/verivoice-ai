@@ -6,14 +6,14 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import App from "./App";
-import type { ContextAnalysisResult } from "./types/context-analysis";
+import { ContextReview } from "../ContextReview";
+import type { ContextAnalysisResult } from "../../types/context-analysis";
 
 const { analyzeContext } = vi.hoisted(() => ({
   analyzeContext: vi.fn(),
 }));
 
-vi.mock("./services/context-analysis", () => ({ analyzeContext }));
+vi.mock("../../services/context-analysis", () => ({ analyzeContext }));
 
 const sampleResult: ContextAnalysisResult = {
   findings: [
@@ -40,7 +40,7 @@ describe("context review form", () => {
 
   it("submits both fields and displays explainable results", async () => {
     analyzeContext.mockResolvedValue(sampleResult);
-    render(<App />);
+    render(<ContextReview />);
 
     fireEvent.change(screen.getByLabelText("Call or message context"), {
       target: { value: "A supplier called about an invoice." },
@@ -63,7 +63,7 @@ describe("context review form", () => {
 
   it("shows the analysis error instead of hiding it", async () => {
     analyzeContext.mockRejectedValue(new Error("Analysis service unavailable"));
-    render(<App />);
+    render(<ContextReview />);
     fireEvent.change(screen.getByLabelText("Call or message context"), {
       target: { value: "A caller made a request." },
     });
