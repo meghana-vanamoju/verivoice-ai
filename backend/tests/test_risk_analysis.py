@@ -39,6 +39,37 @@ def test_negated_transfer_is_not_flagged(text):
 
 
 @pytest.mark.parametrize(
+    ("text", "expected_codes"),
+    [
+        (
+            "Don't forget to wire the funds immediately.",
+            ["URGENCY", "MONEY_TRANSFER"],
+        ),
+        (
+            "Do not hesitate to send the money today.",
+            ["MONEY_TRANSFER"],
+        ),
+    ],
+)
+def test_affirmative_negation_idioms_keep_transfer_findings(text, expected_codes):
+    result = analyze(text)
+
+    assert [indicator["code"] for indicator in result["indicators"]] == expected_codes
+    assert result["score"] >= 30
+    assert result["level"] != "low"
+
+
+def test_direct_negation_after_affirmative_idiom_still_suppresses_action():
+    result = analyze(
+        "Don't forget to wire the funds, but do not share your password."
+    )
+
+    assert [indicator["code"] for indicator in result["indicators"]] == [
+        "MONEY_TRANSFER"
+    ]
+
+
+@pytest.mark.parametrize(
     "text",
     [
         "Never share your password.",

@@ -114,6 +114,10 @@ _NEGATION_PATTERN = re.compile(
     r"(?:\s+\w+){0,6}\s*$",
     re.IGNORECASE,
 )
+_AFFIRMATIVE_NEGATION_IDIOM_PATTERN = re.compile(
+    r"\b(?:do\s+not|don't)\s+(?:forget|hesitate|fail)\s+to\b",
+    re.IGNORECASE,
+)
 
 _GENERAL_GUIDANCE = (
     "Verify the request through a known, independently sourced phone number or approved workflow before acting.",
@@ -133,6 +137,11 @@ def _risk_level(score: int) -> RiskLevel:
 def _is_negated(text: str, start: int) -> bool:
     """Ignore a detected action when a nearby direct negation rejects it."""
     prefix = text[max(0, start - 60) : start]
+    affirmative_idiom = _AFFIRMATIVE_NEGATION_IDIOM_PATTERN.search(prefix)
+    if affirmative_idiom and not _NEGATION_PATTERN.search(
+        prefix[affirmative_idiom.end() :]
+    ):
+        return False
     if re.search(r"\bnot\s+only(?:\s+\w+){0,6}\s*$", prefix, re.IGNORECASE):
         return False
     if re.search(r"[.!?;:]\s*\w*\s*$", prefix) and not prefix.rstrip().endswith((",",)):
