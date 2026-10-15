@@ -1,0 +1,7 @@
+# FastAPI backend dependencies
+fastapi
+uvicorn
+pydantic
+python-multipart
+pytest
+httpx
