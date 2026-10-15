@@ -1,0 +1,7 @@
+# Python generated files
+__pycache__/
+*.py[cod]
+
+# Frontend generated files
+frontend/node_modules/
+frontend/dist/

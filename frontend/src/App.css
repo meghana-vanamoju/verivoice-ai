@@ -297,3 +297,28 @@ code {
     flex-direction: column;
   }
 }
+
+.app-nav {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 0;
+}
+
+.nav-tab {
+  min-height: auto;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.nav-tab-active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #ffffff;
+}

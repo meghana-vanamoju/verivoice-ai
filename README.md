@@ -14,6 +14,7 @@ VeriVoice AI will provide:
 - **Audio validation:** Inspect supported audio files for basic technical anomalies.
 - **Contextual risk analysis:** Identify suspicious patterns such as urgency, secrecy, requests for credentials, money transfers, and changed payment details.
 - **Risk assessment:** Present transparent indicators and a preliminary risk level.
+- **Rules and aggregation:** Detect urgency, secrecy, credential requests, money transfers, and changed payment details with stable codes, evidence, weighted scores, and guidance.
 - **Verification guidance:** Recommend confirming sensitive requests through a known phone number or an approved organizational workflow.
 - **Explainable results:** Show the reasons behind each warning.
 
@@ -42,7 +43,38 @@ A production-ready deepfake detector would require a separately evaluated detect
 
 ## Running the Project
 
-Setup and execution instructions will be added as the backend and frontend implementations are introduced.
+Run the backend from the repository root:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+uvicorn app.main:app --app-dir backend --reload
+```
+
+In another terminal, start the frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open the Vite URL (normally `http://localhost:5173`). The frontend sends context
+and an optional transcript to `POST /api/v1/context/analyze`. For a frontend
+served from a different origin, set `VITE_API_BASE_URL` to the backend origin
+and configure `VERIVOICE_CORS_ORIGINS` on the backend as a comma-separated list
+of trusted origins.
+
+Run the backend tests from `backend/` with:
+
+```bash
+python -m pytest tests
+```
+
+Run frontend tests from `frontend/` with `npm test`.
+
+The context-risk service contract and scoring rules are documented in [docs/api/risk-analysis.md](docs/api/risk-analysis.md).
 
 ## Security and Privacy
 

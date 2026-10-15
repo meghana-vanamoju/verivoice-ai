@@ -5,10 +5,41 @@ import { AudioUpload } from "./components/AudioUpload";
 import { ResultsDashboard } from "./components/ResultsDashboard";
 import { MAX_AUDIO_BYTES } from "./types/analysis";
 import type { AnalysisResponse } from "./types/analysis";
+import { ContextReview } from "./pages/ContextReview";
 
 type AppState = "ready" | "analyzing" | "completed" | "failed";
+type AppView = "voice" | "context";
 
 export default function App() {
+  const [view, setView] = useState<AppView>("voice");
+
+  return (
+    <div className="app-root">
+      <nav className="app-nav" aria-label="Primary">
+        <button
+          type="button"
+          className={view === "voice" ? "nav-tab nav-tab-active" : "nav-tab"}
+          aria-pressed={view === "voice"}
+          onClick={() => setView("voice")}
+        >
+          Voice analysis
+        </button>
+        <button
+          type="button"
+          className={view === "context" ? "nav-tab nav-tab-active" : "nav-tab"}
+          aria-pressed={view === "context"}
+          onClick={() => setView("context")}
+        >
+          Context review
+        </button>
+      </nav>
+
+      {view === "voice" ? <VoiceAnalysisDashboard /> : <ContextReview />}
+    </div>
+  );
+}
+
+function VoiceAnalysisDashboard() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [context, setContext] = useState("");
