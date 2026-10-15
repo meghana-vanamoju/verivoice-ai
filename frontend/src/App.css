@@ -1,0 +1,299 @@
+:root {
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --border: #d1d5db;
+  --primary: #2563eb;
+  --danger: #dc2626;
+  --warn: #d97706;
+  --ok: #16a34a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+.app-shell {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.app-header h1 {
+  margin: 0;
+}
+
+.app-header p {
+  margin: 0.25rem 0;
+  color: var(--muted);
+}
+
+.callout {
+  padding: 0.75rem 1rem;
+  background: #fff7ed;
+  border-left: 4px solid var(--warn);
+  border-radius: 6px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+}
+
+.field {
+  margin: 1rem 0;
+}
+
+.field-label {
+  font-weight: 600;
+  display: block;
+}
+
+.required {
+  color: var(--danger);
+}
+
+.field-hint {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin: 0.25rem 0;
+}
+
+textarea,
+input {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.field-error {
+  color: var(--danger);
+  margin: 0.25rem 0;
+}
+
+.field-warning {
+  color: var(--warn);
+  margin: 0.25rem 0;
+}
+
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dropzone-dragging {
+  border-color: var(--primary);
+  background: #eff6ff;
+}
+
+.selected-file {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.selected-file-name {
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.primary-button,
+.secondary-button {
+  padding: 0.6rem 1.1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  font: inherit;
+}
+
+.primary-button {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 0;
+}
+
+.status-live {
+  margin-top: 1rem;
+  color: var(--primary);
+}
+
+.error-banner {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border-left: 4px solid var(--danger);
+  border-radius: 6px;
+  color: var(--danger);
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.analysis-ref {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.risk-card {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.risk-score-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.risk-high {
+  border-left: 6px solid var(--danger);
+}
+.risk-medium {
+  border-left: 6px solid var(--warn);
+}
+.risk-low {
+  border-left: 6px solid var(--ok);
+}
+
+.risk-level {
+  font-weight: 600;
+}
+
+.risk-summary {
+  margin: 0.5rem 0;
+}
+
+.risk-basis {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+}
+
+.meta-grid dt {
+  font-weight: 600;
+}
+
+.warning-list,
+.findings-list,
+.guidance-list,
+.limitations-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.finding-item {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.finding-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.finding-meta {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.finding-evidence {
+  margin: 0.25rem 0;
+}
+
+.finding-source,
+.finding-confidence {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin: 0.25rem 0;
+}
+
+.guidance-priority {
+  font-weight: 600;
+  margin: 0;
+}
+
+.limitation-callout {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #fff7ed;
+  border-radius: 6px;
+  color: var(--warn);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+code {
+  word-break: break-all;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-shell {
+    padding: 1rem;
+  }
+  .form-actions {
+    flex-direction: column;
+  }
+}
