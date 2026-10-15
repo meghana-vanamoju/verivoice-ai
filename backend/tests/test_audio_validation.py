@@ -9,6 +9,7 @@ import pytest
 
 from app.services.audio_validation import (
     analyze_audio_file,
+    validate_audio,
     MAX_AUDIO_SIZE_BYTES,
     MAX_AUDIO_DURATION_SECONDS,
     AudioValidationError,
@@ -33,7 +34,8 @@ def _make_wav_bytes(
         wav.setframerate(sample_rate)
         # Generate silence (zeros) - sufficient for validation
         n_frames = int(duration_sec * sample_rate)
-        wav.writeframes(b"\x00\x00" * n_frames if sampwidth == 2 else b"\x00" * n_frames)
+        frame_bytes = b"\x00" * (sampwidth * channels)
+        wav.writeframes(frame_bytes * n_frames)
     return buffer.getvalue()
 
 
@@ -181,6 +183,7 @@ def test_single_channel_vs_stereo():
         assert error is None
         assert result is not None
         assert result.channel_count == channels
+        assert 0.9 <= result.duration_sec <= 1.1
 
 
 def test_wav_duration_warning_near_limit():
@@ -268,3 +271,109 @@ def test_no_sensitive_data_leakage():
     audio_byte_count = len(wav_bytes)
     # The serialized result should be much smaller than the audio data
     assert len(str(result_dict)) < audio_byte_count  # very conservative check
+
+# ---------------------------------------------------------------------------
+# validate_audio() agreed interface: validate_audio(audio_bytes) -> dict
+# ---------------------------------------------------------------------------
+def _make_tone_wav(duration_sec=1.0, sample_rate=8000, channels=1,
+                   sampwidth=2, amplitude=10000):
+    """WAV with a constant-amplitude tone (for clipping/metadata tests)."""
+    import struct
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as wav:
+        wav.setnchannels(channels)
+        wav.setsampwidth(sampwidth)
+        wav.setframerate(sample_rate)
+        n_frames = int(duration_sec * sample_rate)
+        if sampwidth == 2:
+            frame = struct.pack("<h", amplitude) * channels
+        else:
+            frame = bytes([128 + amplitude]) * channels
+        wav.writeframes(frame * n_frames)
+    return buffer.getvalue()
+
+
+def test_validate_audio_contract_fields():
+    out = validate_audio(_make_wav_bytes(duration_sec=1.0))
+    assert set(out) == {"valid", "format", "duration_seconds", "sample_rate_hz",
+                        "channels", "validation_warnings", "deepfake_detection"}
+    assert out["valid"] is True and out["format"] == "WAV"
+    assert out["channels"] == 1 and out["sample_rate_hz"] == 8000
+    assert isinstance(out["validation_warnings"], list)
+    assert out["deepfake_detection"] == {"status": "not_configured",
+                                         "score": None, "label": "unknown"}
+
+
+def test_validate_audio_stereo_metadata():
+    out = validate_audio(_make_wav_bytes(duration_sec=1.0, channels=2))
+    assert out["valid"] is True and out["channels"] == 2
+
+
+def test_validate_audio_empty():
+    out = validate_audio(b"")
+    assert out["valid"] is False and "empty_file" in out["validation_warnings"]
+    assert out["deepfake_detection"]["status"] == "not_configured"
+
+
+def test_validate_audio_invalid_format():
+    out = validate_audio(b"Not a WAV file")
+    assert out["valid"] is False and "malformed_audio" in out["validation_warnings"]
+
+
+def test_validate_audio_corrupted_truncated():
+    full = _make_wav_bytes(duration_sec=0.1, sample_rate=8000)
+    out = validate_audio(full[:10])
+    assert out["valid"] is False
+
+
+def test_validate_audio_oversized():
+    out = validate_audio(b"x" * (MAX_AUDIO_SIZE_BYTES + 1))
+    assert out["valid"] is False
+    assert "file_size_exceeds_limit" in out["validation_warnings"]
+
+
+def test_validate_audio_over_duration():
+    out = validate_audio(_make_wav_bytes(duration_sec=121.0))
+    assert out["valid"] is False
+    assert "audio_duration_exceeds_limit" in out["validation_warnings"]
+
+
+def test_validate_audio_clipping_detected():
+    out = validate_audio(_make_tone_wav(duration_sec=1.0, amplitude=32767))
+    assert out["valid"] is True
+    assert "possible_clipping_detected" in out["validation_warnings"]
+
+
+def test_validate_audio_no_clipping_quiet_tone():
+    out = validate_audio(_make_tone_wav(duration_sec=1.0, amplitude=1000))
+    assert out["valid"] is True
+    assert "possible_clipping_detected" not in out["validation_warnings"]
+
+
+def test_validate_audio_unusual_sample_rate_accepted():
+    out = validate_audio(_make_wav_bytes(duration_sec=0.5, sample_rate=44100))
+    assert out["valid"] is True and out["sample_rate_hz"] == 44100
+
+
+def test_validate_audio_8bit_accepted():
+    out = validate_audio(_make_wav_bytes(duration_sec=0.5, sampwidth=1))
+    assert out["valid"] is True
+
+
+def test_validate_audio_detector_unavailable():
+    out = validate_audio(_make_wav_bytes(duration_sec=1.0))
+    dd = out["deepfake_detection"]
+    assert (dd["status"], dd["score"], dd["label"]) == ("not_configured", None, "unknown")
+
+
+def test_validate_audio_never_raises_or_leaks():
+    for bad in (b"", b"\x00\x01\x02", b"RIFF" + b"\x00" * 100):
+        out = validate_audio(bad)
+        assert out["valid"] is False
+        dumped = str(out)
+        assert "Traceback" not in dumped and "File \"" not in dumped
+
+
+def test_validate_audio_wrong_type():
+    out = validate_audio(None)
+    assert out["valid"] is False and "invalid_input_type" in out["validation_warnings"]

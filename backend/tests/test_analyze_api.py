@@ -130,7 +130,9 @@ class TestSuccessfulAnalysis:
         assert audio["sample_rate_hz"] == 16000
         assert audio["channel_count"] == 2
         assert 1.9 <= audio["duration_sec"] <= 2.1
-        assert audio["warnings"] == []
+        # The shared fixture is digital silence by construction (all-zero
+        # frames), so the silence heuristic must report exactly this warning.
+        assert audio["warnings"] == ["silent_or_very_quiet_audio"]
 
     def test_contextual_signals_map_to_contract_finding_codes(self):
         response = _post(_make_wav_bytes(duration_sec=2.0), HIGH_RISK_CONTEXT)
