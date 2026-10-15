@@ -9,6 +9,27 @@
       content="VeriVoice AI reviews sensitive communication for explainable social-engineering risk signals and voice-impersonation indicators. Contextual risk alone does not establish voice authenticity."
     />
     <title>VeriVoice AI</title>
+    <script>
+      // Apply the saved (or system) theme before first paint to avoid a flash.
+      (function () {
+        try {
+          var key = "verivoice-theme";
+          var stored = window.localStorage.getItem(key);
+          var theme =
+            stored === "light" || stored === "dark"
+              ? stored
+              : window.matchMedia &&
+                  window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          var root = document.documentElement;
+          root.setAttribute("data-theme", theme);
+          root.style.colorScheme = theme;
+        } catch (error) {
+          /* Ignore: React applies the theme once mounted. */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

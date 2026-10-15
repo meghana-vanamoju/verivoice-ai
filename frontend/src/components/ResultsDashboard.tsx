@@ -38,8 +38,13 @@ export function ResultsDashboard({ result, onNewAnalysis }: ResultsProps) {
   return (
     <section className="results" aria-labelledby="results-heading">
       <header className="results-header">
-        <h2 id="results-heading">Analysis results</h2>
-        <button type="button" className="secondary-button" onClick={onNewAnalysis}>
+        <div className="results-title">
+          <span className="card-icon" aria-hidden="true">
+            <ChartGlyph />
+          </span>
+          <h2 id="results-heading">Analysis results</h2>
+        </div>
+        <button type="button" className="btn btn-secondary" onClick={onNewAnalysis}>
           New analysis
         </button>
       </header>
@@ -57,7 +62,7 @@ export function ResultsDashboard({ result, onNewAnalysis }: ResultsProps) {
           <p className="risk-level">
             Risk level: <strong>{result.risk.level.toUpperCase()}</strong>
           </p>
-          <p className="risk-summary">{result.risk.summary}</p>
+          <p className="risk-summary-text">{result.risk.summary}</p>
           <p className="risk-basis">
             Score basis: <code>{result.risk.basis}</code>
           </p>
@@ -65,7 +70,12 @@ export function ResultsDashboard({ result, onNewAnalysis }: ResultsProps) {
       </div>
 
       <div className="card">
-        <h3>Audio validation</h3>
+        <div className="card-head">
+          <span className="card-icon" aria-hidden="true">
+            <WaveDocGlyph />
+          </span>
+          <h3>Audio validation</h3>
+        </div>
         <dl className="meta-grid">
           <dt>Validated</dt>
           <dd>{result.audio.valid ? "Yes" : "No"}</dd>
@@ -90,7 +100,12 @@ export function ResultsDashboard({ result, onNewAnalysis }: ResultsProps) {
       </div>
 
       <div className="card">
-        <h3>Voice authenticity status</h3>
+        <div className="card-head">
+          <span className="card-icon" aria-hidden="true">
+            <ShieldGlyph />
+          </span>
+          <h3>Voice authenticity status</h3>
+        </div>
         <p className="detector-status">
           Detector status: <strong>{detection.status}</strong>
         </p>
@@ -104,7 +119,12 @@ export function ResultsDashboard({ result, onNewAnalysis }: ResultsProps) {
       </div>
 
       <div className="card">
-        <h3>Detected findings</h3>
+        <div className="card-head">
+          <span className="card-icon" aria-hidden="true">
+            <SearchGlyph />
+          </span>
+          <h3>Detected findings</h3>
+        </div>
         {result.findings.length === 0 ? (
           <p className="muted">No findings were reported.</p>
         ) : (
@@ -131,10 +151,17 @@ export function ResultsDashboard({ result, onNewAnalysis }: ResultsProps) {
       </div>
 
       <div className="card">
-        <h3>Verification guidance</h3>
+        <div className="card-head">
+          <span className="card-icon" aria-hidden="true">
+            <ChecklistGlyph />
+          </span>
+          <h3>Verification guidance</h3>
+        </div>
         {result.verification_guidance ? (
           <>
-            <p className="guidance-priority">Priority: {result.verification_guidance.priority}</p>
+            <p className="guidance-priority">
+              Priority: {result.verification_guidance.priority}
+            </p>
             <p>{result.verification_guidance.message}</p>
           </>
         ) : (
@@ -143,7 +170,12 @@ export function ResultsDashboard({ result, onNewAnalysis }: ResultsProps) {
       </div>
 
       <div className="card">
-        <h3>Limitations</h3>
+        <div className="card-head">
+          <span className="card-icon" aria-hidden="true">
+            <AlertGlyph />
+          </span>
+          <h3>Limitations</h3>
+        </div>
         <ul className="limitations-list">
           {result.limitations.map((limitation, index) => (
             <li key={index}>{limitation}</li>
@@ -178,5 +210,118 @@ function AuthenticityNote({ status }: { status: DetectorStatus }) {
       Detector completed. A completed technical result is not proof of identity or
       authenticity.
     </p>
+  );
+}
+
+function ChartGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+    </svg>
+  );
+}
+
+function WaveDocGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 12v-2M8 12V8M12 12V5M16 12v-4M20 12v-2" />
+      <path d="M3 16h18" />
+    </svg>
+  );
+}
+
+function ShieldGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3Z" />
+      <path d="M9.5 12l1.8 1.8L15 10" />
+    </svg>
+  );
+}
+
+function SearchGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+function ChecklistGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 6h10M4 12h10M4 18h7" />
+      <path d="m18 7 2 2 3-3" transform="translate(-2 3)" />
+    </svg>
+  );
+}
+
+function AlertGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 4 3 20h18L12 4Z" />
+      <path d="M12 10v4M12 17h.01" />
+    </svg>
   );
 }
