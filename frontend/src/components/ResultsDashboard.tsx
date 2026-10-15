@@ -3,7 +3,6 @@ import type {
   DetectorStatus,
   Finding,
   RiskLevel,
-  VerificationGuidance,
 } from "../types/analysis";
 
 function confidenceLabel(value: number | null): string | null {
@@ -22,12 +21,20 @@ function riskTone(level: RiskLevel): string {
   }
 }
 
+function formatOptionalNumber(value: number | null, suffix: string): string {
+  if (value === null) return "Not provided";
+  return suffix ? `${value} ${suffix}` : String(value);
+}
+
 interface ResultsProps {
   result: AnalysisResponse;
   onNewAnalysis: () => void;
 }
 
 export function ResultsDashboard({ result, onNewAnalysis }: ResultsProps) {
+  const detection = result.audio.deepfake_detection;
+  const labelDisplay = detection.label ?? "unknown";
+
   return (
     <section className="results" aria-labelledby="results-heading">
       <header className="results-header">
@@ -65,23 +72,15 @@ export function ResultsDashboard({ result, onNewAnalysis }: ResultsProps) {
           <dt>Format</dt>
           <dd>{result.audio.format || "Unknown"}</dd>
           <dt>Duration</dt>
-          <dd>
-            {result.audio.duration_seconds === null
-              ? "Not provided"
-              : `${result.audio.duration_seconds} s`}
-          </dd>
+          <dd>{formatOptionalNumber(result.audio.duration_sec, "s")}</dd>
           <dt>Sample rate</dt>
-          <dd>
-            {result.audio.sample_rate_hz === null
-              ? "Not provided"
-              : `${result.audio.sample_rate_hz} Hz`}
-          </dd>
+          <dd>{formatOptionalNumber(result.audio.sample_rate_hz, "Hz")}</dd>
           <dt>Channels</dt>
-          <dd>{result.audio.channels === null ? "Not provided" : result.audio.channels}</dd>
+          <dd>{formatOptionalNumber(result.audio.channel_count, "")}</dd>
         </dl>
-        {result.audio.validation_warnings.length > 0 ? (
+        {result.audio.warnings.length > 0 ? (
           <ul className="warning-list">
-            {result.audio.validation_warnings.map((warning, index) => (
+            {result.audio.warnings.map((warning, index) => (
               <li key={index}>{warning}</li>
             ))}
           </ul>
@@ -93,15 +92,15 @@ export function ResultsDashboard({ result, onNewAnalysis }: ResultsProps) {
       <div className="card">
         <h3>Voice authenticity status</h3>
         <p className="detector-status">
-          Detector status: <strong>{result.audio.deepfake_detection.status}</strong>
+          Detector status: <strong>{detection.status}</strong>
         </p>
-        <p>Detector label: {result.audio.deepfake_detection.label}</p>
-        {result.audio.deepfake_detection.score !== null ? (
-          <p>Detector score: {result.audio.deepfake_detection.score}</p>
+        <p>Detector label: {labelDisplay}</p>
+        {detection.score !== null ? (
+          <p>Detector score: {detection.score}</p>
         ) : (
           <p className="muted">No detector score available.</p>
         )}
-        <AuthenticityNote status={result.audio.deepfake_detection.status} />
+        <AuthenticityNote status={detection.status} />
       </div>
 
       <div className="card">
@@ -133,17 +132,13 @@ export function ResultsDashboard({ result, onNewAnalysis }: ResultsProps) {
 
       <div className="card">
         <h3>Verification guidance</h3>
-        {result.verification_guidance.length === 0 ? (
-          <p className="muted">No verification recommendations were provided.</p>
+        {result.verification_guidance ? (
+          <>
+            <p className="guidance-priority">Priority: {result.verification_guidance.priority}</p>
+            <p>{result.verification_guidance.message}</p>
+          </>
         ) : (
-          <ul className="guidance-list">
-            {result.verification_guidance.map((item: VerificationGuidance, index) => (
-              <li key={`${item.code}-${index}`}>
-                <p className="guidance-priority">Priority: {item.priority}</p>
-                <p>{item.message}</p>
-              </li>
-            ))}
-          </ul>
+          <p className="muted">No verification recommendations were provided.</p>
         )}
       </div>
 

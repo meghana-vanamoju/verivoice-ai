@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./App.css";
-import { analyzeAudio, type ApiRequestError as ApiErrType } from "./services/api";
+import { analyzeAudio, ApiRequestError } from "./services/api";
 import { AudioUpload } from "./components/AudioUpload";
 import { ResultsDashboard } from "./components/ResultsDashboard";
 import { MAX_AUDIO_BYTES } from "./types/analysis";
@@ -61,10 +61,13 @@ export default function App() {
       setResult(response);
       setStatus("completed");
     } catch (error) {
-      const apiError = error as ApiErrType;
-      setErrorMessage(
-        apiError?.message ?? "An unexpected error occurred. Please retry.",
-      );
+      let message = "An unexpected error occurred. Please retry.";
+      if (error instanceof ApiRequestError) {
+        message = error.message;
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      setErrorMessage(message);
       setStatus("failed");
     }
   };
@@ -118,7 +121,7 @@ export default function App() {
               <label className="field-label" htmlFor="context">
                 Communication context <span className="required">*</span>
               </label>
-              <p className="field-hint">
+              <p className="field-hint" id="context-help">
                 Required: describe the communication and circumstances. This helps
                 identify contextual warning signs such as urgency or secrecy.
               </p>
