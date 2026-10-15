@@ -66,10 +66,10 @@ served from a different origin, set `VITE_API_BASE_URL` to the backend origin
 and configure `VERIVOICE_CORS_ORIGINS` on the backend as a comma-separated list
 of trusted origins.
 
-Run backend tests from the repository root with:
+Run the backend tests from `backend/` with:
 
 ```bash
-python -m pytest backend/tests
+python -m pytest tests
 ```
 
 Run frontend tests from `frontend/` with `npm test`.

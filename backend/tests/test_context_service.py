@@ -1,6 +1,6 @@
 import pytest
 
-from backend.app.services.context_service import analyze_context
+from app.services.context_service import analyze_context
 
 
 def test_context_analysis_returns_findings_score_level_and_guidance():

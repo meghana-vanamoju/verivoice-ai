@@ -1,6 +1,6 @@
 import pytest
 
-from backend.app.services.risk_analysis import analyze, analyze_text
+from app.services.risk_analysis import analyze, analyze_text
 
 
 def test_no_signals_returns_low_risk_and_general_guidance():
