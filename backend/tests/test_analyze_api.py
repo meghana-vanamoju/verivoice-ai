@@ -10,6 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.services import deepfake_detector as dd
 from app.services.audio_validation import (
     MAX_AUDIO_SIZE_BYTES,
     MAX_AUDIO_DURATION_SECONDS,
@@ -437,3 +438,67 @@ class TestRiskBands:
     )
     def test_band_boundaries(self, score, expected):
         assert risk_level_for_score(score) == expected
+
+
+# ---------------------------------------------------------------------------
+# Unusual but technically valid audio must not produce a 500
+# ---------------------------------------------------------------------------
+class TestUnusualChannelCount:
+    def test_multichannel_wav_is_accepted_not_a_server_error(self):
+        # A 6-channel WAV is a valid WAVE container; audio-validation
+        # documents "no restrictions on channel count". It must not blow up
+        # into a 500 through the response schema.
+        response = _post(_make_wav_bytes(duration_sec=1.0, channels=6), BENIGN_CONTEXT)
+
+        assert response.status_code == 200
+        assert response.json()["audio"]["valid"] is True
+        assert response.json()["audio"]["channel_count"] == 6
+
+
+# ---------------------------------------------------------------------------
+# Detector status must be reflected honestly in limitations
+# ---------------------------------------------------------------------------
+class TestDetectorLimitations:
+    @pytest.fixture(autouse=True)
+    def _clear_detector(self):
+        dd.clear_detector()
+        yield
+        dd.clear_detector()
+
+    def test_completed_detector_limitation_does_not_claim_not_configured(self):
+        dd.set_detector(dd.FnDetector(lambda samples, sr: (82.5, "spoof")))
+
+        response = _post(_make_wav_bytes(duration_sec=2.0), BENIGN_CONTEXT)
+        body = response.json()
+
+        assert response.status_code == 200
+        assert body["audio"]["deepfake_detection"]["status"] == "completed"
+        limitations = " ".join(body["limitations"])
+        assert "No deepfake detector is currently configured" not in limitations
+        assert any("uncalibrated" in item for item in body["limitations"])
+
+    def test_failed_detector_is_documented_and_never_reads_as_genuine(self):
+        def boom(samples, sr):
+            raise RuntimeError("model files missing")
+
+        dd.set_detector(dd.FnDetector(boom))
+
+        response = _post(_make_wav_bytes(duration_sec=2.0), BENIGN_CONTEXT)
+        body = response.json()
+
+        assert response.status_code == 200
+        assert body["audio"]["deepfake_detection"]["status"] == "failed"
+        limitations = " ".join(body["limitations"])
+        assert "No deepfake detector is currently configured" not in limitations
+        assert "failed to run" in limitations
+        assert "not evidence that the voice is genuine" in limitations
+
+    def test_no_detector_limitation_reports_not_configured(self):
+        response = _post(_make_wav_bytes(duration_sec=2.0), BENIGN_CONTEXT)
+        body = response.json()
+
+        assert body["audio"]["deepfake_detection"]["status"] == "not_configured"
+        assert any(
+            "No deepfake detector is currently configured" in item
+            for item in body["limitations"]
+        )

@@ -36,12 +36,52 @@ LOW_BAND_MAX = 33
 MEDIUM_BAND_MAX = 66
 
 # Contract limitations, stated verbatim so every response carries them.
-ANALYSIS_LIMITATIONS = (
+_BASE_LIMITATIONS = (
     "Audio validation confirms technical validity only; it does not verify speaker authenticity.",
     "Contextual indicators are heuristic warnings, not proof of impersonation or fraud.",
-    "No deepfake detector is currently configured; results should not be interpreted as detector output.",
     "Risk score is a heuristic indicator and not a calibrated probability of fraud.",
 )
+
+# The detector-specific limitation must match the actual detector status: a
+# completed or failed detector must never be described as "not configured",
+# and a failure must never read as evidence of genuine audio.
+_DETECTOR_LIMITATIONS = {
+    "not_configured": (
+        "No deepfake detector is currently configured; results should not be "
+        "interpreted as detector output."
+    ),
+    "completed": (
+        "A deepfake detector ran and produced an uncalibrated spoof-likelihood "
+        "score; this is not proof that the voice is genuine or cloned."
+    ),
+    "failed": (
+        "The deepfake detector failed to run; the absence of detector output is "
+        "not evidence that the voice is genuine."
+    ),
+}
+
+# Retained for backward compatibility with callers/tests that import the
+# default (no detector configured) limitation list.
+ANALYSIS_LIMITATIONS = (
+    _BASE_LIMITATIONS[0],
+    _BASE_LIMITATIONS[1],
+    _DETECTOR_LIMITATIONS["not_configured"],
+    _BASE_LIMITATIONS[2],
+)
+
+
+def limitations_for_detector_status(status: str) -> list[str]:
+    """Return the contract limitations reflecting the actual detector status."""
+    key = getattr(status, "value", status)
+    detector_limitation = _DETECTOR_LIMITATIONS.get(
+        key, _DETECTOR_LIMITATIONS["not_configured"]
+    )
+    return [
+        _BASE_LIMITATIONS[0],
+        _BASE_LIMITATIONS[1],
+        detector_limitation,
+        _BASE_LIMITATIONS[2],
+    ]
 
 # Context-risk module code -> contract finding code.
 CONTEXT_CODE_TO_FINDING_CODE: dict[str, FindingCode] = {
@@ -198,6 +238,8 @@ def run_analysis(
     if audio_result.warnings:
         basis = basis + _TECHNICAL_WARNING_BASIS
 
+    detector_status = audio_result.deepfake_detection.status.value
+
     return AnalysisResponseBaseModel(
         analysis_id=str(uuid.uuid4()),
         status="completed",
@@ -210,5 +252,5 @@ def run_analysis(
         audio=_audio_payload(audio_result),
         findings=findings,
         verification_guidance=_guidance(context_result, level),
-        limitations=list(ANALYSIS_LIMITATIONS),
+        limitations=limitations_for_detector_status(detector_status),
     )

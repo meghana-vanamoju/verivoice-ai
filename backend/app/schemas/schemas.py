@@ -49,7 +49,13 @@ class AudioBaseModel(BaseModel):
         ..., ge=1, description="Sample rate in Hz"
     )
     channel_count: int = Field(
-        ..., ge=1, le=2, description="Number of audio channels"
+        ...,
+        ge=1,
+        description=(
+            "Number of audio channels. No upper bound is enforced: the "
+            "audio-validation module accepts unusual channel counts rather "
+            "than failing a technically valid WAV."
+        ),
     )
     warnings: list[str] = Field(
         default_factory=list, description="List of technical warnings"
