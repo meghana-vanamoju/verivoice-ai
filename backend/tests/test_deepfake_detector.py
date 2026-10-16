@@ -112,6 +112,39 @@ def test_set_detector_rejects_invalid_object():
         dd.set_detector(object())
 
 
+def test_configure_detector_from_env_activates_detector(monkeypatch):
+    """VERIVOICE_DETECTOR_MODEL must actually wire the detector at startup.
+
+    Constructing the detector is cheap (weights load lazily), so setting the
+    variable should leave a detector configured rather than silently doing
+    nothing.
+    """
+    from app.main import configure_detector_from_env
+
+    monkeypatch.setenv("VERIVOICE_DETECTOR_MODEL", "/nonexistent/checkpoint")
+    configure_detector_from_env()
+    assert isinstance(dd.get_detector(), dd.HFWav2Vec2Detector)
+
+
+def test_configure_detector_from_env_unset_leaves_not_configured(monkeypatch):
+    from app.main import configure_detector_from_env
+
+    monkeypatch.delenv("VERIVOICE_DETECTOR_MODEL", raising=False)
+    configure_detector_from_env()
+    assert dd.get_detector() is None
+
+
+def test_broken_configured_detector_reports_failed_not_genuine():
+    """A configured-but-unloadable detector must surface as 'failed'."""
+    dd.set_detector(dd.HFWav2Vec2Detector(model_path="/nonexistent/checkpoint"))
+    out = validate_audio(_make_wav_bytes())
+
+    assert out["valid"] is True
+    assert out["deepfake_detection"]["status"] == "failed"
+    assert out["deepfake_detection"]["score"] is None
+    assert out["deepfake_detection"]["label"] == "unknown"
+
+
 def test_real_pretrained_weights_integration():
     """Real-weight integration: runs only with explicit local checkpoint.
 

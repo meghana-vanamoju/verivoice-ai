@@ -1,6 +1,8 @@
 """FastAPI application entry point."""
 
+import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +10,37 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.analyze import router as analyze_router
 from app.api.context import router as context_router
 from app.core.errors import register_error_handlers
+from app.services.deepfake_detector import detector_from_env
+
+logger = logging.getLogger(__name__)
+
+
+def configure_detector_from_env() -> None:
+    """Activate the opt-in detector when ``VERIVOICE_DETECTOR_MODEL`` is set.
+
+    This never downloads weights and never crashes startup: constructing the
+    detector is cheap, and a missing optional dependency or unusable
+    checkpoint surfaces later as detector status ``failed`` on a request. That
+    failure must never be read as evidence of genuine audio.
+    """
+    try:
+        detector = detector_from_env()
+    except Exception:  # pragma: no cover - defensive: never block startup
+        logger.exception(
+            "Could not configure the deepfake detector from the environment; "
+            "continuing with detector status 'not_configured'."
+        )
+        return
+    if detector is not None:
+        logger.info("Deepfake detector configured from VERIVOICE_DETECTOR_MODEL.")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Configure optional integrations once, at application startup."""
+    configure_detector_from_env()
+    yield
+
 
 cors_origins = [
     origin.strip()
@@ -25,6 +58,7 @@ app = FastAPI(
         "contextual risk analysis, and verification guidance."
     ),
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
