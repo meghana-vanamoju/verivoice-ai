@@ -1,8 +1,9 @@
 # Audio Validation Module (Nitheesha)
 
-Lightweight WAV validation + basic quality analysis for VeriVoice AI.
-Uses only the Python standard library (`wave`, `struct`, `io`) plus the
-existing `pydantic` dependency. No new dependencies.
+Audio validation + basic quality analysis for VeriVoice AI (WAV, MP3, MP4).
+WAV files are validated using the Python standard library (`wave`, `struct`, `io`).
+MP3 and MP4 files require FFmpeg for decoding/extraction. Uses `pydantic`
+for schemas.
 
 ## Usage
 
@@ -41,7 +42,7 @@ messages that never expose internal exceptions or stack traces.
 | Field | Meaning |
 |---|---|
 | `valid` | Technical validity only — **not** speaker authenticity. |
-| `format` | `"WAV"` on success, `"unknown"` on rejection. |
+| `format` | `"WAV"`, `"MP3"`, or `"MP4"` on success, `"unknown"` on rejection. |
 | `duration_seconds` | Rounded to 3 decimals; `0.0` on rejection. |
 | `sample_rate_hz` / `channels` | From WAV header; `0` on rejection. |
 | `validation_warnings` | Non-fatal notes + rejection reason codes. |

@@ -81,7 +81,7 @@ describe("App component", () => {
     const submitButton = screen.getByRole("button", { name: /analyze/i });
     await user.click(submitButton);
 
-    const audioError = screen.getByText(/please select a wav audio file/i);
+    const audioError = screen.getByText(/please select a wav, mp3, or mp4 audio file/i);
     expect(audioError).toBeInTheDocument();
     expect(mockAnalyzeAudio).not.toHaveBeenCalled();
   });
@@ -422,6 +422,6 @@ describe("App component", () => {
     const submitButton = screen.getByRole("button", { name: /analyze/i });
     await user.click(submitButton);
 
-    expect(screen.getByText(/please select a wav audio file/i)).toBeInTheDocument();
+    expect(screen.getByText(/please select a wav, mp3, or mp4 audio file/i)).toBeInTheDocument();
   });
 });

@@ -19,12 +19,12 @@ describe("AudioUpload component", () => {
 
     const input = screen.getByLabelText(/audio file/i).parentElement?.querySelector('input[type="file"]');
     expect(input).toBeInTheDocument();
-    expect(input).toHaveAttribute("accept", ".wav,audio/wav,audio/x-wav,audio/wave");
+    expect(input).toHaveAttribute("accept", ".wav,.mp3,.mp4,audio/wav,audio/x-wav,audio/wave,audio/mp3,audio/mpeg,video/mp4,audio/mp4");
 
-    const chooseButton = screen.getByRole("button", { name: /choose wav file/i });
+    const chooseButton = screen.getByRole("button", { name: /choose wav, mp3, or mp4 file/i });
     expect(chooseButton).toBeInTheDocument();
 
-    const dropzoneText = screen.getByText(/or drag and drop a wav file here/i);
+    const dropzoneText = screen.getByText(/or drag and drop a wav, mp3, or mp4 file here/i);
     expect(dropzoneText).toBeInTheDocument();
   });
 
@@ -81,27 +81,27 @@ describe("AudioUpload component", () => {
   });
 
   it("shows preliminary WAV warning for file that doesn't look like WAV", () => {
-    const file = new File(["content"], "audio.mp3", { type: "audio/mpeg" });
+    const file = new File(["content"], "audio.flac", { type: "audio/flac" });
     render(<AudioUpload file={file} error={null} onFileSelected={mockOnFileSelected} onClear={mockOnClear} />);
 
-    const warning = screen.getByText(/does not look like a wav file/i);
+    const warning = screen.getByText(/does not look like a wav, mp3, or mp4 file/i);
     expect(warning).toBeInTheDocument();
     expect(warning).toHaveAttribute("role", "status");
-    expect(warning).toHaveTextContent(/The selected file does not look like a WAV file by extension or MIME type/);
+    expect(warning).toHaveTextContent(/The selected file does not look like a WAV, MP3, or MP4 file by extension or MIME type/);
   });
 
   it("does not show WAV warning for valid WAV file", () => {
     const file = new File(["content"], "audio.wav", { type: "audio/wav" });
     render(<AudioUpload file={file} error={null} onFileSelected={mockOnFileSelected} onClear={mockOnClear} />);
 
-    expect(screen.queryByRole("status", { name: /does not look like a wav file/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("status", { name: /does not look like a wav, mp3, or mp4 file/i })).not.toBeInTheDocument();
   });
 
   it("does not show WAV warning for file with wav extension", () => {
     const file = new File(["content"], "audio.wav", { type: "application/octet-stream" });
     render(<AudioUpload file={file} error={null} onFileSelected={mockOnFileSelected} onClear={mockOnClear} />);
 
-    expect(screen.queryByRole("status", { name: /does not look like a wav file/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("status", { name: /does not look like a wav, mp3, or mp4 file/i })).not.toBeInTheDocument();
   });
 
   it("disables interactions when disabled prop is true", async () => {
@@ -109,7 +109,7 @@ describe("AudioUpload component", () => {
     const file = new File(["test audio content"], "test.wav", { type: "audio/wav" });
     render(<AudioUpload file={null} error={null} onFileSelected={mockOnFileSelected} onClear={mockOnClear} disabled={true} />);
 
-    const chooseButton = screen.getByRole("button", { name: /choose wav file/i });
+    const chooseButton = screen.getByRole("button", { name: /choose wav, mp3, or mp4 file/i });
     const input = screen.getByLabelText(/audio file/i).parentElement?.querySelector('input[type="file"]') as HTMLInputElement;
 
     expect(chooseButton).toBeDisabled();
@@ -167,7 +167,7 @@ describe("AudioUpload component", () => {
     const file = new File(["test audio content"], "dropped.wav", { type: "audio/wav" });
     render(<AudioUpload file={null} error={null} onFileSelected={mockOnFileSelected} onClear={mockOnClear} />);
 
-    const dropzone = screen.getByText(/or drag and drop a wav file here/i).parentElement;
+    const dropzone = screen.getByText(/or drag and drop a wav, mp3, or mp4 file here/i).parentElement;
     if (!dropzone) throw new Error("Dropzone not found");
 
     // Simulate drag over

@@ -26,7 +26,7 @@ export function VoiceAnalysis() {
     }
     if (file.size > MAX_AUDIO_BYTES) {
       setAudioFile(null);
-      setAudioError("File exceeds the 15 MB limit. Please choose a smaller WAV file.");
+      setAudioError("File exceeds the 15 MB limit. Please choose a smaller audio file.");
       return;
     }
     setAudioFile(file);
@@ -39,7 +39,7 @@ export function VoiceAnalysis() {
     setErrorMessage(null);
 
     if (!audioFile) {
-      setAudioError("Please select a WAV audio file.");
+      setAudioError("Please select a WAV, MP3, or MP4 audio file.");
       return;
     }
     if (!context.trim()) {
@@ -99,8 +99,8 @@ export function VoiceAnalysis() {
           Analyze a voice sample
         </h2>
         <p className="page-lede">
-          Assess technical audio properties and contextual warning signs for a WAV
-          recording. Results describe signals to review — not proof of voice authenticity.
+          Assess technical audio properties and contextual warning signs for a WAV, MP3, or
+          MP4 recording. Results describe signals to review — not proof of voice authenticity.
         </p>
         <p className="notice notice-warn">
           <span className="notice-icon" aria-hidden="true">

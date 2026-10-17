@@ -11,7 +11,7 @@ Voice cloning and identity impersonation can be used in fraudulent calls, financ
 
 VeriVoice AI will provide:
 
-- **Audio validation:** Inspect supported audio files for basic technical anomalies.
+- **Audio validation:** Inspect supported audio files (WAV, MP3, MP4) for basic technical anomalies.
 - **Contextual risk analysis:** Identify suspicious patterns such as urgency, secrecy, requests for credentials, money transfers, and changed payment details.
 - **Risk assessment:** Present transparent indicators and a preliminary risk level.
 - **Rules and aggregation:** Detect urgency, secrecy, credential requests, money transfers, and changed payment details with stable codes, evidence, weighted scores, and guidance.
@@ -42,6 +42,22 @@ The initial prototype will focus on audio validation and transparent context-bas
 A production-ready deepfake detector would require a separately evaluated detection model and representative test data.
 
 ## Running the Project
+
+### System Dependencies
+
+VeriVoice AI requires **FFmpeg** for MP3 and MP4 file processing. WAV files work
+without FFmpeg, but MP3 and MP4 support requires the `ffmpeg` and `ffprobe`
+binaries to be installed on your system.
+
+**Install FFmpeg:**
+
+- **Ubuntu/Debian:** `sudo apt-get install ffmpeg`
+- **macOS:** `brew install ffmpeg`
+- **Windows:** Download from https://ffmpeg.org/download.html or use `winget install ffmpeg`
+
+Verify installation: `ffmpeg -version` and `ffprobe -version`
+
+### Python Dependencies
 
 Run the backend from the repository root:
 

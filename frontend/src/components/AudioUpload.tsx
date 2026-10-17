@@ -1,7 +1,15 @@
 import { useRef, useState } from "react";
 
-const ACCEPTED_EXTENSIONS = [".wav"];
-const ACCEPTED_MIME = ["audio/wav", "audio/x-wav", "audio/wave"];
+const ACCEPTED_EXTENSIONS = [".wav", ".mp3", ".mp4"];
+const ACCEPTED_MIME = [
+  "audio/wav",
+  "audio/x-wav",
+  "audio/wave",
+  "audio/mp3",
+  "audio/mpeg",
+  "video/mp4",
+  "audio/mp4",
+];
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -9,7 +17,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function isWavFile(file: File): boolean {
+function isSupportedFile(file: File): boolean {
   const name = file.name.toLowerCase();
   return (
     ACCEPTED_EXTENSIONS.some((ext) => name.endsWith(ext)) ||
@@ -41,8 +49,8 @@ export function AudioUpload({ file, error, onFileSelected, onClear, disabled }: 
         Audio file <span className="required">*</span>
       </label>
       <p className="field-hint">
-        WAV audio up to 15 MB. Extension or MIME type is only a preliminary check; the
-        backend validates the actual audio.
+        WAV, MP3, or MP4 audio up to 15 MB. Extension or MIME type is only a preliminary check; the
+        backend validates the actual media.
       </p>
       <div
         className={[
@@ -69,7 +77,8 @@ export function AudioUpload({ file, error, onFileSelected, onClear, disabled }: 
           ref={inputRef}
           type="file"
           className="visually-hidden"
-          accept=".wav,audio/wav,audio/x-wav,audio/wave"
+          accept=".wav,.mp3,.mp4,audio/wav,audio/x-wav,audio/wave,audio/mp3,audio/mpeg,video/mp4,audio/mp4"
+
           onChange={(event) => handleFiles(event.target.files)}
           disabled={disabled}
           aria-describedby="audio-help"
@@ -83,10 +92,10 @@ export function AudioUpload({ file, error, onFileSelected, onClear, disabled }: 
           onClick={() => inputRef.current?.click()}
           disabled={disabled}
         >
-          Choose WAV file
+          Choose WAV, MP3, or MP4 file
         </button>
         <span className="dropzone-text" id="audio-help">
-          or drag and drop a WAV file here
+          or drag and drop a WAV, MP3, or MP4 file here
         </span>
       </div>
 
@@ -108,9 +117,9 @@ export function AudioUpload({ file, error, onFileSelected, onClear, disabled }: 
           {error}
         </p>
       ) : null}
-      {file && !isWavFile(file) ? (
+      {file && !isSupportedFile(file) ? (
         <p className="field-warning" role="status">
-          The selected file does not look like a WAV file by extension or MIME type.
+          The selected file does not look like a WAV, MP3, or MP4 file by extension or MIME type.
         </p>
       ) : null}
     </div>
